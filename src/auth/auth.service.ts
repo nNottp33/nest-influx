@@ -31,29 +31,18 @@ export class AuthService {
         }
       }
 
-      const {
-        password,
-        createdAt,
-        updatedAt,
-        isActive,
-        sessionToken,
-        fullName,
-        ...restPayload
-      } = result.data
-
-      if (signInDto.source === 'member') {
-        Object.assign(restPayload, { role: 'member' })
+      const { id, username, role, fullName } = result.data
+      const payloadJWT = {
+        id,
+        username,
+        role,
+        full_name: fullName
       }
 
-      const accessToken = await this.jwtService.signAsync(restPayload)
-      Object.assign(restPayload, {
-        full_name: fullName,
-        session_token: accessToken
-      })
-
+      const session_token = await this.jwtService.signAsync(payloadJWT)
       const resultUpdated = await connectService.updateUser({
-        id: restPayload.id,
-        session_token: accessToken
+        id,
+        session_token
       })
 
       if (resultUpdated?.statusCode !== 200) {
@@ -66,7 +55,7 @@ export class AuthService {
       return {
         statusCode: 200,
         message: ['SignIn successfully'],
-        data: restPayload
+        data: { ...payloadJWT, session_token }
       }
     } catch (error) {
       console.error('[ERROR] Auth SignIn CATCH:', error)

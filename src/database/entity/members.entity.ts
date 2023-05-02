@@ -44,6 +44,15 @@ export class Members {
   @Column({
     type: 'text',
     nullable: true,
+    name: 'role',
+    default: 'member'
+  })
+  role: string
+
+  @Index()
+  @Column({
+    type: 'text',
+    nullable: true,
     name: 'session_token'
   })
   sessionToken: string
