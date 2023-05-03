@@ -13,22 +13,22 @@ import { BookService } from './book.service'
 import { NewBooksDto } from '../../dtos'
 import { SessionGuard } from '../../guards'
 
-@Controller('api/books')
+@Controller()
 @UseGuards(SessionGuard)
 export class BookController {
   constructor(private readonly booksService: BookService) {}
 
-  @Get()
+  @Get('api/books')
   getBooks(): object {
     return this.booksService.getBooks()
   }
 
-  @Get('/:id')
+  @Get('api/book/:id')
   getBookById(@Param('id', ParseIntPipe) id: number) {
     return this.booksService.getBookById(id)
   }
 
-  @Post()
+  @Post('api/book')
   @UsePipes(ValidationPipe)
   newBook(@Body() newBooksDto: NewBooksDto) {
     return this.booksService.addNewBooks(newBooksDto)
