@@ -2,7 +2,6 @@ import { Injectable, UnprocessableEntityException } from '@nestjs/common'
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
 import { Books } from '../../database/entity'
-
 @Injectable()
 export class BookService {
   constructor(
@@ -46,44 +45,26 @@ export class BookService {
 
   addNewBooks = async (newBooksDto) => {
     try {
-      const {
-        book_name_th,
-        book_name_en,
-        image_url,
-        verify_payload,
-        book_code,
-        ...newDtoData
-      } = newBooksDto
-
+      const { verify_payload, ...newDtoData } = newBooksDto
       const createdBy = verify_payload?.username || 'systemadmin'
-      const updatedBy = createdBy
-      await this.dataSource
-        .createQueryBuilder()
-        .insert()
-        .into(Books)
-        .values({
-          bookNameTh: book_name_th,
-          bookNameEn: book_name_en,
-          imageUrl: image_url,
-          createdBy,
-          updatedBy,
-          bookCode: book_code,
-          ...newDtoData
-        })
-        .orUpdate(
-          [
-            'book_name_th',
-            'book_name_en',
-            'image_url',
-            'price',
-            'author',
-            'publisher',
-            'updated_at',
-            'updated_by'
-          ],
-          ['book_code']
-        )
-        .execute()
+
+      const queryString = `INSERT INTO books ( book_name_th, book_name_en, image_url, price, author, publisher, created_at, updated_at, created_by, updated_by, book_code ) 
+      VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $7, $7, $8) 
+      ON CONFLICT (book_code) 
+      DO UPDATE 
+      SET book_name_th=EXCLUDED.book_name_th, book_name_en=EXCLUDED.book_name_en, image_url=EXCLUDED.image_url, price=EXCLUDED.price, author=EXCLUDED.author, publisher=EXCLUDED.publisher, updated_at=CURRENT_TIMESTAMP, updated_by=EXCLUDED.updated_by`
+
+      const values = [
+        newDtoData?.book_name_th || null,
+        newDtoData?.book_name_en || null,
+        newDtoData?.image_url || null,
+        newDtoData?.price || null,
+        newDtoData?.author || null,
+        newDtoData?.publisher || null,
+        createdBy,
+        newDtoData?.book_code || null
+      ]
+      await this.dataSource.query(queryString, values)
 
       return { statusCode: 200, message: ['Save book data successfully'] }
     } catch (error) {
