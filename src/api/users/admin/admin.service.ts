@@ -28,23 +28,37 @@ export class AdminService {
       }
     } catch (error) {
       console.error('[ERROR] getAdminUserByUsername CATCH:', error)
-      throw new UnprocessableEntityException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new UnprocessableEntityException(message)
     }
   }
 
   createAdmin = async (newAdminDto) => {
     try {
-      const { full_name, password, ...restObj } = newAdminDto
+      const { full_name, password, verify_payload, ...restObj } = newAdminDto
       const salt = await bcrypt.genSalt(11)
       const passwordHash = await bcrypt.hash(password, salt)
+      const createdBy = verify_payload?.username || 'systemadmin'
 
       await this.dataSource
         .createQueryBuilder()
         .insert()
         .into(AdminUsers)
-        .values({ password: passwordHash, fullName: full_name, ...restObj })
+        .values({
+          createdBy: createdBy,
+          password: passwordHash,
+          fullName: full_name,
+          ...restObj
+        })
         .orUpdate(
-          ['username', 'password', 'full_name', 'role', 'updated_at'],
+          [
+            'username',
+            'password',
+            'full_name',
+            'role',
+            'updated_at',
+            'created_by'
+          ],
           ['username'],
           {
             skipUpdateIfNoValuesChanged: true
@@ -55,7 +69,8 @@ export class AdminService {
       return { statusCode: 200, message: ['Admin created successfully'] }
     } catch (error) {
       console.log('[ERROR] createAdmin CATCH:', error)
-      throw new UnprocessableEntityException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new UnprocessableEntityException(message)
     }
   }
 
@@ -101,7 +116,24 @@ export class AdminService {
       return { statusCode: 200, message: ['Updated data successfully'] }
     } catch (error) {
       console.log('[ERROR] updateAdminUser CATCH:', error)
-      throw new UnprocessableEntityException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new UnprocessableEntityException(message)
+    }
+  }
+
+  checkExitsUser = async ({ username, token }) => {
+    try {
+      const isExists = await this.adminModel
+        .createQueryBuilder('admin_users')
+        .where('username = :username AND session_token = :token ', {
+          username,
+          token
+        })
+        .getCount()
+      return isExists === 1
+    } catch (error) {
+      console.error('[ERROR] AdminUsers checkExitsUser CATCH:', error)
+      return false
     }
   }
 }

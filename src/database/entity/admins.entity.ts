@@ -49,6 +49,13 @@ export class AdminUsers {
   sessionToken: string
 
   @Column({
+    type: 'text',
+    nullable: true,
+    name: 'created_by'
+  })
+  createdBy: string
+
+  @Column({
     type: 'timestamptz',
     default: dateTime.now(),
     name: 'created_at'

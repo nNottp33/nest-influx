@@ -27,7 +27,8 @@ export class MemberService {
       }
     } catch (error) {
       console.error('[ERROR] getUserByUsername CATCH:', error)
-      throw new UnprocessableEntityException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new UnprocessableEntityException(message)
     }
   }
 
@@ -73,7 +74,25 @@ export class MemberService {
       return { statusCode: 200, message: ['Updated data successfully'] }
     } catch (error) {
       console.log('[ERROR] updateMemberUser CATCH:', error)
-      throw new UnprocessableEntityException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new UnprocessableEntityException(message)
+    }
+  }
+
+  checkExitsUser = async ({ username, token }) => {
+    try {
+      const isExists = await this.memberModel
+        .createQueryBuilder('members')
+        .where('username = :username AND session_token = :token ', {
+          username,
+          token
+        })
+        .getCount()
+
+      return isExists === 1
+    } catch (error) {
+      console.error('[ERROR] Members checkExitsUser CATCH:', error)
+      return false
     }
   }
 }

@@ -59,7 +59,8 @@ export class AuthService {
       }
     } catch (error) {
       console.error('[ERROR] Auth SignIn CATCH:', error)
-      throw new BadRequestException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new BadRequestException(message)
     }
   }
 
@@ -85,7 +86,8 @@ export class AuthService {
       }
     } catch (error) {
       console.error('[ERROR] Auth SignOut CATCH:', error)
-      throw new BadRequestException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new BadRequestException(message)
     }
   }
 }

@@ -1,5 +1,6 @@
-import { Controller } from '@nestjs/common'
-import { MemberService } from './member.service'
+import { Controller, UseGuards } from '@nestjs/common'
+import { SessionGuard } from '../../../guards'
 
-@Controller('member')
+@Controller('api/member')
+@UseGuards(SessionGuard)
 export class MemberController {}

@@ -1,12 +1,13 @@
 import { Injectable, UnprocessableEntityException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm'
+import { Repository, DataSource } from 'typeorm'
 import { Books } from '../../database/entity'
 
 @Injectable()
 export class BookService {
   constructor(
-    @InjectRepository(Books) private readonly bookModel: Repository<Books>
+    @InjectRepository(Books) private readonly bookModel: Repository<Books>,
+    @InjectDataSource() private dataSource: DataSource
   ) {}
 
   getBooks = async () => {
@@ -20,7 +21,8 @@ export class BookService {
       }
     } catch (error) {
       console.error('[ERROR] getBooks CATCH:', error)
-      throw new UnprocessableEntityException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new UnprocessableEntityException(message)
     }
   }
 
@@ -37,27 +39,57 @@ export class BookService {
       }
     } catch (error) {
       console.error('[ERROR] getBookById CATCH:', error)
-      throw new UnprocessableEntityException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new UnprocessableEntityException(message)
     }
   }
 
   addNewBooks = async (newBooksDto) => {
     try {
-      const { book_name_th, book_name_en, image_url, ...newDtoData } =
-        newBooksDto
-
-      const newBooks = await this.bookModel.create({
-        bookNameTh: book_name_th,
-        bookNameEn: book_name_en,
-        imageUrl: image_url,
+      const {
+        book_name_th,
+        book_name_en,
+        image_url,
+        verify_payload,
+        book_code,
         ...newDtoData
-      })
-      await this.bookModel.insert(newBooks)
+      } = newBooksDto
+
+      const createdBy = verify_payload?.username || 'systemadmin'
+      const updatedBy = createdBy
+      await this.dataSource
+        .createQueryBuilder()
+        .insert()
+        .into(Books)
+        .values({
+          bookNameTh: book_name_th,
+          bookNameEn: book_name_en,
+          imageUrl: image_url,
+          createdBy,
+          updatedBy,
+          bookCode: book_code,
+          ...newDtoData
+        })
+        .orUpdate(
+          [
+            'book_name_th',
+            'book_name_en',
+            'image_url',
+            'price',
+            'author',
+            'publisher',
+            'updated_at',
+            'updated_by'
+          ],
+          ['book_code']
+        )
+        .execute()
 
       return { statusCode: 200, message: ['Save book data successfully'] }
     } catch (error) {
       console.error('[ERROR] addNewBooks CATCH:', error)
-      throw new UnprocessableEntityException(error.message)
+      const message = error?.message || 'System error occurred'
+      throw new UnprocessableEntityException(message)
     }
   }
 }

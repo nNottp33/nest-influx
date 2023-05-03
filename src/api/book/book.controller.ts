@@ -6,14 +6,18 @@ import {
   Body,
   ParseIntPipe,
   UsePipes,
-  ValidationPipe
+  ValidationPipe,
+  UseGuards
 } from '@nestjs/common'
 import { BookService } from './book.service'
 import { NewBooksDto } from '../../dtos'
+import { SessionGuard } from '../../guards'
 
 @Controller('api/books')
+@UseGuards(SessionGuard)
 export class BookController {
   constructor(private readonly booksService: BookService) {}
+
   @Get()
   getBooks(): object {
     return this.booksService.getBooks()

@@ -1,13 +1,22 @@
-import { Column, Entity, PrimaryGeneratedColumn, Index } from 'typeorm'
+import { Column, Entity, PrimaryGeneratedColumn, Index, Unique } from 'typeorm'
 import { dateTime } from '../../utils'
 
 @Entity()
+@Unique('constraint_books', ['bookCode'])
 export class Books {
   @PrimaryGeneratedColumn({
     type: 'int8',
     name: 'id'
   })
   id: number
+
+  @Index()
+  @Column({
+    type: 'text',
+    nullable: true,
+    name: 'book_code'
+  })
+  bookCode: string
 
   @Index()
   @Column({
@@ -55,6 +64,21 @@ export class Books {
     name: 'publisher'
   })
   publisher: string
+
+  @Index()
+  @Column({
+    type: 'text',
+    nullable: true,
+    name: 'created_by'
+  })
+  createdBy: string
+
+  @Column({
+    type: 'text',
+    nullable: true,
+    name: 'updated_by'
+  })
+  updatedBy: string
 
   @Column({
     type: 'timestamptz',

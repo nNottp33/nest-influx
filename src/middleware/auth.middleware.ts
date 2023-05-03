@@ -35,15 +35,14 @@ export class AuthMiddleware implements NestMiddleware {
           secret: this.config.get('JWT_SECRET')
         }
       )
-      payload.token = headersDto.authorization
       req.body['verify_payload'] = payload
 
       next()
     } catch (error) {
       console.error('[ERROR] books middleware CATCH:', error)
-      const message =
-        error?.message?.replace(/jwt|JWT|Jwt/gim, 'token') || 'Error'
-      throw new UnauthorizedException(message)
+      const message = error?.message || 'error'
+      const newMessage = message.replace(/jwt|JWT|Jwt/gim, 'token') || 'Error'
+      throw new UnauthorizedException(newMessage)
     }
   }
 }

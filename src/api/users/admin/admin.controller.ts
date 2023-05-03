@@ -2,13 +2,16 @@ import {
   Body,
   Controller,
   Post,
+  UseGuards,
   UsePipes,
   ValidationPipe
 } from '@nestjs/common'
 import { AdminService } from './admin.service'
 import { NewAdminDto } from '../../../dtos'
+import { SessionGuard } from '../../../guards'
 
 @Controller('api/admin')
+@UseGuards(SessionGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
