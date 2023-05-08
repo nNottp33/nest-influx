@@ -1,18 +1,22 @@
 import * as bcrypt from 'bcrypt'
-import { Injectable, UnprocessableEntityException } from '@nestjs/common'
-import { InjectRepository, InjectDataSource } from '@nestjs/typeorm'
-import { Repository, DataSource } from 'typeorm'
+import {
+  Injectable,
+  Inject,
+  UnprocessableEntityException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AdminUsers } from '../../../database/entity'
 import { dateTime } from '../../../utils'
+import { Sequelize, QueryTypes } from '../../../database/database.provider'
 
 @Injectable()
 export class AdminService {
   constructor(
-    @InjectRepository(AdminUsers)
-    private readonly adminModel: Repository<AdminUsers>,
-    @InjectDataSource() private dataSource: DataSource,
-    private config: ConfigService
+    @Inject('ADMIN_USERS_REPOSITORY')
+    private readonly adminModel: typeof AdminUsers,
+    private config: ConfigService,
+    @Inject('SEQUELIZE')
+    private readonly rawQuery: Sequelize
   ) {}
 
   getUserByUsername = async (username: string) => {
@@ -35,36 +39,21 @@ export class AdminService {
 
   createAdmin = async (newAdminDto) => {
     try {
-      const { full_name, password, verify_payload, ...restObj } = newAdminDto
+      const { username, role, full_name, password, verify_payload } =
+        newAdminDto
       const salt = await bcrypt.genSalt(11)
       const passwordHash = await bcrypt.hash(password, salt)
       const createdBy = verify_payload?.username || 'systemadmin'
 
-      await this.dataSource
-        .createQueryBuilder()
-        .insert()
-        .into(AdminUsers)
-        .values({
-          createdBy: createdBy,
-          password: passwordHash,
-          fullName: full_name,
-          ...restObj
-        })
-        .orUpdate(
-          [
-            'username',
-            'password',
-            'full_name',
-            'role',
-            'updated_at',
-            'created_by'
-          ],
-          ['username'],
-          {
-            skipUpdateIfNoValuesChanged: true
-          }
-        )
-        .execute()
+      const values = { username, passwordHash, full_name, role, createdBy }
+      const queryString = `INSERT INTO admin_users ( username, password, full_name, role, created_by ) VALUES ( :username, :passwordHash, :full_name, :role, :createdBy ) ON CONFLICT ( username ) DO NOTHING`
+      const [instance, effectedCount] = await this.rawQuery.query(queryString, {
+        replacements: values,
+        type: QueryTypes.INSERT
+      })
+
+      if (effectedCount === 0)
+        return { statusCode: 200, message: ['Admin already exits'] }
 
       return { statusCode: 200, message: ['Admin created successfully'] }
     } catch (error) {
@@ -102,14 +91,11 @@ export class AdminService {
         Object.assign(updateData, { isActive: is_active })
       }
 
-      const result = await this.dataSource
-        .createQueryBuilder()
-        .update(AdminUsers)
-        .set(updateData)
-        .where('id = :id', { id: id })
-        .execute()
+      const [effectedCount] = await this.adminModel.update(updateData, {
+        where: { id: id }
+      })
 
-      if (result.affected === 0) {
+      if (effectedCount === 0) {
         return { statusCode: 422, message: ['Unprocessable Entity'] }
       }
 
@@ -123,13 +109,10 @@ export class AdminService {
 
   checkExitsUser = async ({ username, token }) => {
     try {
-      const isExists = await this.adminModel
-        .createQueryBuilder('admin_users')
-        .where('username = :username AND session_token = :token ', {
-          username,
-          token
-        })
-        .getCount()
+      const isExists = await this.adminModel.count({
+        where: { username: username, sessionToken: token }
+      })
+
       return isExists === 1
     } catch (error) {
       console.error('[ERROR] AdminUsers checkExitsUser CATCH:', error)

@@ -1,17 +1,21 @@
-import { Injectable, UnprocessableEntityException } from '@nestjs/common'
-import { InjectRepository, InjectDataSource } from '@nestjs/typeorm'
-import { Repository, DataSource } from 'typeorm'
+import {
+  Injectable,
+  Inject,
+  UnprocessableEntityException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Members } from '../../../database/entity'
 import { dateTime } from '../../../utils'
+import { Sequelize, QueryTypes } from '../../../database/database.provider'
 
 @Injectable()
 export class MemberService {
   constructor(
-    @InjectRepository(Members)
-    private readonly memberModel: Repository<Members>,
-    @InjectDataSource() private dataSource: DataSource,
-    private config: ConfigService
+    @Inject('MEMBERS_REPOSITORY')
+    private readonly memberModel: typeof Members,
+    private config: ConfigService,
+    @Inject('SEQUELIZE')
+    private readonly rawQuery: Sequelize
   ) {}
 
   getUserByUsername = async (username: string) => {
@@ -60,14 +64,11 @@ export class MemberService {
         Object.assign(updateData, { isActive: is_active })
       }
 
-      const result = await this.dataSource
-        .createQueryBuilder()
-        .update(Members)
-        .set(updateData)
-        .where('id = :id', { id: id })
-        .execute()
+      const [effectedCount] = await this.memberModel.update(updateData, {
+        where: { id: id }
+      })
 
-      if (result.affected === 0) {
+      if (effectedCount === 0) {
         return { statusCode: 422, message: ['Unprocessable Entity'] }
       }
 
@@ -81,13 +82,9 @@ export class MemberService {
 
   checkExitsUser = async ({ username, token }) => {
     try {
-      const isExists = await this.memberModel
-        .createQueryBuilder('members')
-        .where('username = :username AND session_token = :token ', {
-          username,
-          token
-        })
-        .getCount()
+      const isExists = await this.memberModel.count({
+        where: { username: username, sessionToken: token }
+      })
 
       return isExists === 1
     } catch (error) {

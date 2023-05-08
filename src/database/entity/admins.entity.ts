@@ -1,78 +1,101 @@
-import { Index, Column, Entity, Unique, PrimaryGeneratedColumn } from 'typeorm'
-import { dateTime } from '../../utils'
-
-@Entity()
-@Unique('constraint_admin', ['username'])
-// @Unique('constraint_admin', ['username', 'fullName'])
-export class AdminUsers {
-  @PrimaryGeneratedColumn({
-    type: 'int8',
-    name: 'id'
+import { Column, Table, Model, DataType } from 'sequelize-typescript'
+@Table({
+  tableName: 'admin_users',
+  indexes: [
+    // {
+    //   name: 'constraint_admin',
+    //   unique: true,
+    //   fields: ['username', 'full_name']
+    // },
+    {
+      name: 'constraint_admin',
+      fields: ['username'],
+      unique: true
+    },
+    {
+      name: 'idx_admin_full_name',
+      fields: ['full_name']
+    },
+    {
+      name: 'idx_admin_role',
+      fields: ['role']
+    },
+    {
+      name: 'idx_admin_is_active',
+      fields: ['is_active']
+    }
+  ]
+})
+export class AdminUsers extends Model<AdminUsers> {
+  @Column({
+    type: DataType.BIGINT,
+    field: 'id',
+    primaryKey: true,
+    autoIncrement: true
   })
   id: number
 
-  @Index()
   @Column({
-    type: 'text',
-    nullable: true,
-    name: 'username'
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'username',
+    unique: false
   })
   username: string
 
   @Column({
-    type: 'text',
-    nullable: true,
-    name: 'password'
+    type: DataType.TEXT,
+    allowNull: true,
+    field: 'password'
   })
   password: string
 
   @Column({
-    type: 'text',
-    nullable: true,
-    name: 'full_name'
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'full_name'
   })
   fullName: string
 
-  @Index()
   @Column({
-    type: 'text',
-    nullable: true,
-    name: 'role'
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'role'
   })
   role: string
 
   @Column({
-    type: 'text',
-    nullable: true,
-    name: 'session_token'
+    type: DataType.TEXT,
+    allowNull: true,
+    field: 'session_token'
   })
   sessionToken: string
 
   @Column({
-    type: 'text',
-    nullable: true,
-    name: 'created_by'
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'created_by'
   })
   createdBy: string
 
   @Column({
-    type: 'timestamptz',
-    default: dateTime.now(),
-    name: 'created_at'
+    type: DataType.DATE,
+    defaultValue: DataType.NOW,
+    field: 'created_at'
   })
   createdAt: any
 
   @Column({
-    type: 'timestamptz',
-    default: dateTime.now(),
-    name: 'updated_at'
+    type: DataType.DATE,
+    defaultValue: DataType.NOW,
+    field: 'updated_at'
   })
   updatedAt: any
 
   @Column({
-    type: 'bool',
-    default: true,
-    name: 'is_active'
+    type: DataType.BOOLEAN,
+    defaultValue: true,
+    field: 'is_active'
   })
   isActive: boolean
 }

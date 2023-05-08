@@ -16,11 +16,9 @@ import { JwtModule } from '@nestjs/jwt'
 import { SessionGuard } from './guards'
 import { AdminService } from './api/users/admin/admin.service'
 import { MemberService } from './api/users/member/member.service'
-import { Books, AdminUsers, Members } from './database/entity'
-import { TypeOrmModule } from '@nestjs/typeorm'
+import { modelProviders } from './database/entity'
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Books, AdminUsers, Members]),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [config]
@@ -31,7 +29,13 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     JwtModule
   ],
   controllers: [AppController],
-  providers: [AppService, AdminService, MemberService, SessionGuard]
+  providers: [
+    AppService,
+    ...modelProviders,
+    AdminService,
+    MemberService,
+    SessionGuard
+  ]
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

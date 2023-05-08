@@ -17,6 +17,7 @@ async function bootstrap() {
   // middleware for body parser
   app.use(json())
   app.use(urlencoded({ extended: true }))
+  // app.setGlobalPrefix('/api')
 
   // server running
   await app.listen(appConfig.PORT)

@@ -2,12 +2,13 @@ import {
   Body,
   Controller,
   Post,
+  Patch,
   UseGuards,
   UsePipes,
   ValidationPipe
 } from '@nestjs/common'
 import { AdminService } from './admin.service'
-import { NewAdminDto } from '../../../dtos'
+import { NewAdminDto, PatchAdminDto } from '../../../dtos'
 import { SessionGuard } from '../../../guards'
 
 @Controller('api/admin')
@@ -19,5 +20,11 @@ export class AdminController {
   @UsePipes(ValidationPipe)
   createAdmin(@Body() newAdminDto: NewAdminDto) {
     return this.adminService.createAdmin(newAdminDto)
+  }
+
+  @Patch()
+  @UsePipes(ValidationPipe)
+  updateAdmin(@Body() patchAdminDto: PatchAdminDto) {
+    return this.adminService.updateUser(patchAdminDto)
   }
 }

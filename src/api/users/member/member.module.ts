@@ -1,20 +1,16 @@
 import { Module } from '@nestjs/common'
 import { MemberController } from './member.controller'
 import { MemberService } from './member.service'
-import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigModule } from '@nestjs/config'
-import { AdminUsers, Members } from '../../../database/entity'
 import { JwtModule } from '@nestjs/jwt'
 import { AdminService } from '../admin/admin.service'
+import { DatabaseModule } from '../../../database/database.module'
+import { modelProviders } from '../../../database/entity'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Members, AdminUsers]),
-    ConfigModule,
-    JwtModule
-  ],
+  imports: [DatabaseModule, ConfigModule, JwtModule],
   controllers: [MemberController],
-  providers: [MemberService, AdminService],
+  providers: [MemberService, ...modelProviders, AdminService],
   exports: [MemberService]
 })
 export class MemberModule {}
